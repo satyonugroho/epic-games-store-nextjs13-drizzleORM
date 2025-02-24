@@ -1,35 +1,32 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import { GamesGrid } from '@/components/Games'
-import { useGames } from '@/lib/games'
-import React, { Suspense } from 'react'
 
-type Props = {
-  relatedCategories?: string
-  searchParams?: { [key: string]: string | string[] | undefined }
-  gameId: number
+export default function SimilarGames({ gameId }: { gameId: string }) {
+  const [games, setGames] = useState([])
+
+  useEffect(() => {
+    async function fetchSimilarGames() {
+      try {
+        const { data } = await supabase
+          .from('games')
+          .select('*')
+          .neq('id', gameId)
+          .limit(4)
+
+        setGames(data || [])
+      } catch (error) {
+        console.error('Error fetching similar games:', error)
+      }
+    }
+
+    fetchSimilarGames()
+  }, [gameId])
+
+  return <GamesGrid games={games} />
 }
-async function SimilarGames({ relatedCategories, gameId }: Props) {
-  const page = 1
-  const pageSize = 3
-  const categoriesQuery = {
-    categories: relatedCategories,
-  }
-  const similarGames = await useGames(
-    page,
-    categoriesQuery,
-    `game/${gameId}/similar-games`,
-    pageSize,
-  )
-
-  return (
-    <Suspense fallback={<SimilarGamesSkeleton />}>
-      <div className="mb-12">
-        <GamesGrid games={similarGames.data} />
-      </div>
-    </Suspense>
-  )
-}
-
-export default SimilarGames
 
 export function SimilarGamesSkeleton() {
   return (

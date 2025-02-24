@@ -1,0 +1,6 @@
+ALTER TABLE games
+DROP COLUMN IF EXISTS price,
+DROP COLUMN IF EXISTS currency;
+
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS stripe_customers;

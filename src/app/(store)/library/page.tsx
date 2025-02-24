@@ -1,31 +1,36 @@
-import { GamesGrid } from "@/components/Games";
-import React, { cache } from "react";
-import { useGames } from "@/lib/games";
-import Pagination from "@/components/Pagination";
+'use client'
 
-type Props = {
-  params: { slug: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
+import { useState, useEffect } from 'react'
+import { GamesGrid } from '@/components/Games'
+import { useAuth } from '@/components/providers/supabase-provider'
+import { supabase } from '@/lib/supabase'
 
-async function Library({ searchParams }: Props) {
-  const page = Number(searchParams?.page) || 1;
+export default function LibraryPage() {
+  const { user } = useAuth()
+  const [games, setGames] = useState([])
 
-  const { data, hasNextPage } = await useGames(
-    page,
-    searchParams,
-    "my-library"
-  );
+  useEffect(() => {
+    async function fetchUserGames() {
+      if (!user) return
 
-  return (
-    <>
-      <div className="flex-grow pt-4">
-        <h1 className=" mb-8 text-4xl font-medium">Library</h1>
-        <GamesGrid games={data} />
-        <Pagination page={page} hasNextPage={hasNextPage} />
-      </div>
-    </>
-  );
+      try {
+        const { data } = await supabase
+          .from('user_games')
+          .select('*, games(*)')
+          .eq('user_id', user.id)
+
+        setGames(data?.map(ug => ug.games) || [])
+      } catch (error) {
+        console.error('Error fetching library games:', error)
+      }
+    }
+
+    fetchUserGames()
+  }, [user])
+
+  if (!user) {
+    return <div>Please sign in to view your library</div>
+  }
+
+  return <GamesGrid games={games} />
 }
-
-export default Library;

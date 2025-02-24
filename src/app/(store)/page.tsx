@@ -1,22 +1,25 @@
+'use client'
+
 import { GamesGrid } from '@/components/Games'
 import Pagination from '@/components/Pagination'
-import { useGames } from '@/lib/games'
 import FeaturedSection from './FeaturedSection'
+import { useState, useEffect } from 'react'
+
 type Props = {
   params: { slug: string }
   searchParams?: { [key: string]: string | string[] | undefined }
 }
 
-export default async function Home({ params, searchParams }: Props) {
+export default function Home({ params, searchParams }: Props) {
   const page = Number(searchParams?.page) || 1
-  const { data, hasNextPage } = await useGames(page)
+  const games = useGames(page)
 
   return (
     <main>
       <>
         <FeaturedSection />
         <h2 className=" font-medium text-2xl my-6 mt-16">Featured games</h2>
-        <GamesGrid games={data} />
+        <GamesGrid games={games} />
         <Pagination
           page={page}
           hasNextPage={hasNextPage}
@@ -25,4 +28,18 @@ export default async function Home({ params, searchParams }: Props) {
       </>
     </main>
   )
+}
+
+function useGames(page: number) {
+  const [games, setGames] = useState([])
+  const [hasNextPage, setHasNextPage] = useState(false)
+
+  useEffect(() => {
+    async function fetchGames() {
+      // Your fetch logic here
+    }
+    fetchGames()
+  }, [page])
+
+  return { games, hasNextPage }
 }

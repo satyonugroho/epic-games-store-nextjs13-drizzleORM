@@ -12,8 +12,10 @@ function FeaturedGames({ games }: Props) {
   const [featured, setFeatured] = useState<Game>()
 
   useEffect(() => {
-    setFeatured(games[0])
-  }, [])
+    if (games?.length > 0) {
+      setFeatured(games[0])
+    }
+  }, [games, setFeatured])
 
   return (
     <div className="grid grid-cols-8 gap-8 ">

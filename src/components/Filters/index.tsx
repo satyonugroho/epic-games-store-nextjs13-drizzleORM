@@ -1,15 +1,15 @@
-import React from "react";
+'use client'
+
+import React, { useState, useEffect } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import FilterControls from "./FillterControls";
-import { useCategories } from "@/lib/categories";
-import { usePlatfroms } from "@/lib/platfroms";
 import { cn } from "@/lib/utils";
 
-async function GameFilters() {
-  const categories = await useCategories();
-  const platforms = await usePlatfroms();
+export default function GameFilters() {
+  const categories = useCategories();
+  const platforms = usePlatfroms();
   return (
     <>
       <div className="h-full">
@@ -36,4 +36,28 @@ async function GameFilters() {
   );
 }
 
-export default GameFilters;
+function useCategories() {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      // Your fetch logic here
+    }
+    fetchCategories();
+  }, []);
+
+  return categories;
+}
+
+function usePlatfroms() {
+  const [platforms, setPlatforms] = useState([]);
+
+  useEffect(() => {
+    async function fetchPlatforms() {
+      // Your fetch logic here
+    }
+    fetchPlatforms();
+  }, []);
+
+  return platforms;
+}
