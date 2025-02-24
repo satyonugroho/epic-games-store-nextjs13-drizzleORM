@@ -28,30 +28,53 @@ export const useGames = async <T = Game>(
   }
 
   const currentPageQuery = createQueryString(query)
-  const nextPageQuey = createQueryString(nextQuery)
+  const nextPageQuery = createQueryString(nextQuery)
 
-  const { data } = (await fetch(
-    `${process.env.BASE_URL}/api/${apiPath}${currentPageQuery}`,
-    {
-      headers: { Authorization: `Bearer ${await getToken()}` },
-    },
-  )
-    .then((res) => res.json())
-    .catch((e) => console.log(e))) as {
-    data: T[]
-  }
-  const nextPage = (await fetch(
-    `${process.env.BASE_URL}/api/${apiPath}${nextPageQuey}`,
-    { headers: { Authorization: `Bearer ${await getToken()}` } },
-  )
-    .then((res) => res.json())
-    .catch((e) => console.log(e))) as {
-    data: T[]
-  }
-  const hasNextPage = nextPage.data.length > 0
+  try {
+    // Fetch current page
+    const currentPageResponse = await fetch(
+      `${process.env.BASE_URL}/api/${apiPath}${currentPageQuery}`,
+      {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json'
+        },
+      }
+    );
 
-  return {
-    data,
-    hasNextPage,
+    if (!currentPageResponse.ok) {
+      throw new Error(`HTTP error! status: ${currentPageResponse.status}`);
+    }
+
+    const currentPageData = await currentPageResponse.json();
+
+    // Fetch next page
+    const nextPageResponse = await fetch(
+      `${process.env.BASE_URL}/api/${apiPath}${nextPageQuery}`,
+      {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json'
+        },
+      }
+    );
+
+    if (!nextPageResponse.ok) {
+      throw new Error(`HTTP error! status: ${nextPageResponse.status}`);
+    }
+
+    const nextPageData = await nextPageResponse.json();
+
+    return {
+      data: currentPageData?.data || [],
+      hasNextPage: (nextPageData?.data || []).length > 0,
+    };
+
+  } catch (error) {
+    console.error('Error fetching games:', error);
+    return {
+      data: [],
+      hasNextPage: false,
+    };
   }
 }

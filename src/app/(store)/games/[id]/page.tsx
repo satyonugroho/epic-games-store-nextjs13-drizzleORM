@@ -14,10 +14,12 @@ type Props = {
   params: { id: string }
   searchParams?: { [key: string]: string | string[] | undefined }
 }
+
 async function GameDetailsPage({ params, searchParams }: Props) {
   const { id } = params
   const activeImage = Number(searchParams?.image)
   const { getToken } = auth()
+
   // Response type
   type Response = {
     data: Game & {
@@ -32,56 +34,47 @@ async function GameDetailsPage({ params, searchParams }: Props) {
     isOwned: boolean
   }
 
-  const { data, isOwned } = (await fetch(
-    `${process.env.BASE_URL}/api/game/${id}`,
-    {
-      headers: { Authorization: `Bearer ${await getToken()}` },
-    },
-  )
-    .then((res) => res.json())
-    .catch((e) => console.log(e))) as Response
-  const game = data
+  try {
+    const response = await fetch(
+      `${process.env.BASE_URL}/api/game/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json'
+        },
+      }
+    );
 
-  const relatedCategories = getCategoryNames(game.categories)
-    .split(',')
-    .join('|')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-  return (
-    game && (
-      <div className=" pb-24">
-        <div className="flex gap-8">
-          <div className="flex-grow ">
-            <p className=" text-4xl font-medium my-5">{game.title}</p>
-            {media && (
-              <GameMedia
-                media={game.media}
-                gameId={id}
-                activeMedia={activeImage}
-              />
-            )}
-            <div className=" my-12">
-              <h4 className=" text-lg mb-4 font-medium ">Description</h4>
-              <p className=" text-neutral-400">{game.gameDescription}</p>
-            </div>
-          </div>
-          <GameDetails game={game} isOwned={isOwned} />
-          {/* </div> */}
-        </div>
-        <>
-          {relatedCategories && relatedCategories !== '' && (
-            <>
-              <h4 className=" text-lg mb-4 font-medium">Similar Games</h4>
-              <SimilarGames
-                gameId={game.id}
-                relatedCategories={relatedCategories}
-                searchParams={searchParams}
-              />
-            </>
-          )}
-        </>
+    const { data, isOwned } = await response.json() as Response;
+
+    if (!data) {
+      throw new Error('No game data received');
+    }
+
+    const game = data;
+    const relatedCategories = getCategoryNames(game.categories)
+      .split(',')
+      .join('|');
+
+    return (
+      <div className="pb-24">
+        {/* ...existing JSX... */}
       </div>
-    )
-  )
+    );
+
+  } catch (error) {
+    console.error('Error fetching game details:', error);
+    // You might want to return an error UI component here
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-red-500">Failed to load game details</p>
+      </div>
+    );
+  }
 }
 
 export default GameDetailsPage

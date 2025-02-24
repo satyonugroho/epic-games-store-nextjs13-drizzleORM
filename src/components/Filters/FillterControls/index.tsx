@@ -10,18 +10,21 @@ import { createQueryString } from "@/utils/filters";
 import { SearchBar } from "@/components/Navigation";
 
 type Props = {
-  categories: {
+  categories?: {
     data: Category[];
   };
-  platforms: {
+  platforms?: {
     data: Platform[];
   };
 };
 
-function FilterControls({ categories, platforms }: Props) {
+function FilterControls({
+  categories = { data: [] },
+  platforms = { data: [] }
+}: Props) {
   const router = useRouter();
   const pathName = usePathname();
-  const currentPath = pathName.split("/").pop();
+  const currentPath = pathName.split("/").pop() || "";
   let filters: { [key: string]: string | undefined } = {};
 
   const handleFilterUpdate = (key: string, value: string) => {
@@ -34,15 +37,15 @@ function FilterControls({ categories, platforms }: Props) {
     <Accordion type="single" collapsible className="w-full">
       <div className="flex gap-2 flex-col">
         <span>Search</span>
-        <SearchBar className=" bg-neutral-800 border-neutral-700 mb-4" />
+        <SearchBar className="bg-neutral-800 border-neutral-700 mb-4" />
       </div>
       <CategoryFilters
-        categories={categories.data}
+        categories={categories?.data || []}
         title="Categories"
         onFilterChange={(key, value) => handleFilterUpdate(key, value)}
       />
       <CategoryFilters
-        categories={platforms.data}
+        categories={platforms?.data || []}
         title="Platforms"
         onFilterChange={(key, value) => handleFilterUpdate(key, value)}
       />

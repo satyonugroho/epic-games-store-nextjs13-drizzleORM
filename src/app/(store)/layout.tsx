@@ -12,7 +12,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Navbar />
           {children}
           <div className=" text-sm text-neutral-500 p-4 text-center">
-            Built for learning purpuses, code availabe on GitHub
+            GAMESERU
           </div>
         </div>
       </div>

@@ -6,12 +6,13 @@
     "db:push": "drizzle-kit push:pg",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate:pg",
-    "dev": "next dev",
+    "dev": "next dev -p 3005",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start -p 3005",
+    "lint": "next lint",
+    "db:seed": "tsx src/db/seed.ts"
   },
-  "dependencies": {
+    "dependencies": {
     "@clerk/nextjs": "^4.23.5",
     "@clerk/themes": "^1.7.5",
     "@neondatabase/serverless": "^0.6.0",

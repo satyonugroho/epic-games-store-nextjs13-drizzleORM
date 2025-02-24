@@ -1,20 +1,32 @@
+// import { neon, neonConfig } from '@neondatabase/serverless'
+// import { drizzle } from 'drizzle-orm/neon-http'
+// import * as userSchema from './user/schema'
+// import * as gameSchema from './game/schema'
+// import * as platfomsSchema from './platforms/schema'
+// import * as mediaSchema from './media/schema'
+
+// neonConfig.fetchConnectionCache = true
+
+// const schema = {
+//   ...userSchema,
+//   ...gameSchema,
+//   ...platfomsSchema,
+//   ...mediaSchema,
+// }
+// const sql = neon(process.env.DRIZZLE_DATABASE_URL!)
+// const db = drizzle(sql, { schema })
+
+// export { db }
+// // const result = await db.select().from(...);
+
 import { neon, neonConfig } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
-import * as userSchema from './user/schema'
-import * as gameSchema from './game/schema'
-import * as platfomsSchema from './platforms/schema'
-import * as mediaSchema from './media/schema'
+import * as schema from './game/schema'
 
-neonConfig.fetchConnectionCache = true
-
-const schema = {
-  ...userSchema,
-  ...gameSchema,
-  ...platfomsSchema,
-  ...mediaSchema,
+// Disable connection caching in dev
+if (process.env.NODE_ENV === 'development') {
+  neonConfig.fetchConnectionCache = false
 }
-const sql = neon(process.env.DRIZZLE_DATABASE_URL!)
-const db = drizzle(sql, { schema })
 
-export { db }
-// const result = await db.select().from(...);
+const sql = neon(process.env.DRIZZLE_DATABASE_URL!)
+export const db = drizzle(sql, { schema })
