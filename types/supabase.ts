@@ -30,6 +30,17 @@ export interface Database {
                 }
                 Insert: Omit<Database['public']['Tables']['user_games']['Row'], 'id'>
             }
+            platforms: {
+                Row: {
+                    id: string
+                    name: string
+                    slug: string
+                    created_at?: string
+                }
+                Insert: Omit<Database['public']['Tables']['platforms']['Row'], 'id' | 'created_at'>
+            }
         }
     }
 }
+
+export type Platform = Database['public']['Tables']['platforms']['Row']

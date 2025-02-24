@@ -1,15 +1,31 @@
-import { authMiddleware } from '@clerk/nextjs'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// This example protects all routes including api/trpc routes
-// Please edit this to allow other routes to be public as needed.
-// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your middleware
-export default authMiddleware({
-  // Make all api public
-  // publicRoutes: ["/api(.*)"],
-  // Make only wbhook api public
-  publicRoutes: ['/api/webhooks/(.*)'],
-})
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
+
+  // Optional: refresh session if expired
+  const { data: { session }, error } = await supabase.auth.getSession()
+
+  // Optional: protected routes check
+  const isAuthPage = req.nextUrl.pathname.startsWith('/sign-in') ||
+    req.nextUrl.pathname.startsWith('/sign-up')
+  const isProtectedRoute = req.nextUrl.pathname.startsWith('/protected') ||
+    req.nextUrl.pathname.startsWith('/library')
+
+  if (!session && isProtectedRoute) {
+    return NextResponse.redirect(new URL('/sign-in', req.url))
+  }
+
+  if (session && isAuthPage) {
+    return NextResponse.redirect(new URL('/', req.url))
+  }
+
+  return res
+}
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }

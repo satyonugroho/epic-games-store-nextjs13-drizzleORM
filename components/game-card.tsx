@@ -26,7 +26,7 @@ export function GameCard({ game, onAcquire }: GameCardProps) {
                 onClick={() => onAcquire(game.id)}
                 className="button primary"
             >
-                Get Game
+                Get Free Game
             </button>
         </div>
     )

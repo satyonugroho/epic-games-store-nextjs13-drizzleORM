@@ -3,8 +3,9 @@ import GameMedia from '@/components/Games/GameMedia'
 import { Category, Game } from '@/db/game/schema'
 import { Media, media } from '@/db/media/schema'
 import { Platform } from '@/db/platforms/schema'
-import { auth } from '@clerk/nextjs/server'
 import { getCategoryNames } from '@/utils/helpers/Games'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 import Image from 'next/image'
 import React from 'react'
@@ -16,9 +17,8 @@ type Props = {
 }
 
 async function GameDetailsPage({ params, searchParams }: Props) {
-  const { id } = params
+  const supabase = createServerComponentClient({ cookies })
   const activeImage = Number(searchParams?.image)
-  const { getToken } = auth()
 
   // Response type
   type Response = {
@@ -36,10 +36,9 @@ async function GameDetailsPage({ params, searchParams }: Props) {
 
   try {
     const response = await fetch(
-      `${process.env.BASE_URL}/api/game/${id}`,
+      `${process.env.BASE_URL}/api/game/${params.id}`,
       {
         headers: {
-          Authorization: `Bearer ${await getToken()}`,
           'Content-Type': 'application/json'
         },
       }

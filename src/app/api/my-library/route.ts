@@ -1,48 +1,32 @@
-import { db } from '@/db'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { libraryItems } from '@/db/game/schema'
-import { users } from '@/db/user/schema'
-import { eq } from 'drizzle-orm'
-import { auth } from '@clerk/nextjs/server'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const { userId } = await auth()
-  // if (!userId) {
-  //   return new Response("Unauthorized", { status: 401 });
-  // }
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const limit = Number(searchParams.get('limit'))
   const offset = Number(searchParams.get('offset')) || null
-  try {
-    if (userId) {
-      const user = await db.query.users.findFirst({
-        where: eq(users.authId, userId),
-        columns: {
-          id: true,
-        },
-      })
-      if (user) {
-        const response = await db.query.libraryItems.findMany({
-          where: eq(libraryItems.userId, user.id),
-          with: {
-            game: true,
-          },
-          limit: limit,
-          offset: offset ? offset : undefined,
-        })
-        const data = response.map((item: any) => {
-          const { game, ...rest } = item
-          return { ...game, ...rest }
-        })
 
-        return NextResponse.json({ data })
-      } else {
-        return NextResponse.json({ error: 'unable to load library' })
-      }
-    } else {
-      return NextResponse.json({ error: 'unable to load library' })
-    }
+  try {
+    const { data, error } = await supabase
+      .from('user_games')
+      .select('*, games(*)')
+      .eq('user_id', user.id)
+      .limit(limit)
+      .range(offset || 0, (offset || 0) + (limit || 10))
+
+    if (error) throw error
+    return NextResponse.json({ data })
   } catch (e) {
-    return NextResponse.json({ e })
+    return NextResponse.json({ error: e }, { status: 500 })
   }
 }

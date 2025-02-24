@@ -1,14 +1,22 @@
-import { Category } from '@/db/game/schema'
-import { auth } from '@clerk/nextjs/server'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import type { Database } from '@/types/supabase'
 
 export const useCategories = async () => {
-  const { getToken } = auth()
-  const categories = (await fetch(`${process.env.BASE_URL}/api/categories`, {
-    headers: { Authorization: `Bearer ${await getToken()}` },
-  })
-    .then((res) => res.json())
-    .catch((e) => console.log(e))) as {
-    data: Category[]
+  const supabase = createClientComponentClient<Database>()
+
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+
+    if (error) {
+      console.error('Error fetching categories:', error)
+      return { data: [] }
+    }
+
+    return { data }
+  } catch (e) {
+    console.error('Error:', e)
+    return { data: [] }
   }
-  return categories
 }

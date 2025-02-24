@@ -1,80 +1,49 @@
-import { Game } from '@/db/game/schema'
-import { createQueryString } from '@/utils/filters'
-import { auth } from '@clerk/nextjs/server'
+import { Game } from '@/types/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export const useGames = async <T = Game>(
   page: number,
   searchParams?: { [key: string]: string | string[] | undefined },
   endpoint?: string,
-  pageSize?: number,
+  pageSize: number = 12
 ): Promise<{ data: T[]; hasNextPage: boolean }> => {
-  const { getToken } = auth()
-  const apiPath = endpoint ? endpoint : 'game'
-
-  const perPage = pageSize ? pageSize : 12
-  const pageOffset = (page - 1) * perPage
-  const nextPageOffset = pageOffset + perPage
-
-  const query = {
-    limit: perPage.toString(),
-    offset: pageOffset.toString(),
-    ...searchParams,
-  }
-
-  const nextQuery = {
-    limit: perPage.toString(),
-    offset: nextPageOffset.toString(),
-    ...searchParams,
-  }
-
-  const currentPageQuery = createQueryString(query)
-  const nextPageQuery = createQueryString(nextQuery)
+  const supabase = createClientComponentClient()
+  const start = (page - 1) * pageSize
+  const end = start + pageSize
 
   try {
-    // Fetch current page
-    const currentPageResponse = await fetch(
-      `${process.env.BASE_URL}/api/${apiPath}${currentPageQuery}`,
-      {
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-          'Content-Type': 'application/json'
-        },
-      }
-    );
+    let query = supabase
+      .from('games')
+      .select('*', { count: 'exact' })
+      .range(start, end)
 
-    if (!currentPageResponse.ok) {
-      throw new Error(`HTTP error! status: ${currentPageResponse.status}`);
+    // Add filters based on searchParams
+    if (searchParams?.category) {
+      query = query.eq('category', searchParams.category)
+    }
+    if (searchParams?.platform) {
+      query = query.eq('platform', searchParams.platform)
+    }
+    if (searchParams?.q) {
+      query = query.ilike('title', `%${searchParams.q}%`)
     }
 
-    const currentPageData = await currentPageResponse.json();
+    const { data, count, error } = await query
 
-    // Fetch next page
-    const nextPageResponse = await fetch(
-      `${process.env.BASE_URL}/api/${apiPath}${nextPageQuery}`,
-      {
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-          'Content-Type': 'application/json'
-        },
-      }
-    );
+    if (error) throw error
 
-    if (!nextPageResponse.ok) {
-      throw new Error(`HTTP error! status: ${nextPageResponse.status}`);
-    }
-
-    const nextPageData = await nextPageResponse.json();
+    // Check if there are more items after the current page
+    const hasNextPage = (count || 0) > (page * pageSize)
 
     return {
-      data: currentPageData?.data || [],
-      hasNextPage: (nextPageData?.data || []).length > 0,
-    };
-
+      data: (data || []) as T[],
+      hasNextPage
+    }
   } catch (error) {
-    console.error('Error fetching games:', error);
+    console.error('Error fetching games:', error)
     return {
       data: [],
-      hasNextPage: false,
-    };
+      hasNextPage: false
+    }
   }
 }

@@ -1,71 +1,40 @@
-import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { games, categories, libraryItems } from "@/db/game/schema";
-import { and, eq } from "drizzle-orm";
-import { auth } from "@clerk/nextjs/server";
-import { users } from "@/db/user/schema";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
-// export async function GET(
-//   request: Request,
-//   { params }: { params: { id: string } }
-// ) {
-//   const { userId } = auth();
-//   const id = Number(params.id); // 'a', 'b', or 'c'
-//   const data = await db.query.games.findFirst({
-//     where: eq(games.id, id),
-//     with: {
-//       media: true,
-//       categories: {
-//         with: {
-//           category: true,
-//         },
-//       },
-//       platforms: {
-//         with: {
-//           platform: true,
-//         },
-//       },
-//     },
-//   });
-//   let isOwned = false;
-//   if (userId) {
-//     const user = await db.query.users.findFirst({
-//       where: eq(users.authId, userId),
-//     });
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
-//     if (user) {
-//       isOwned = (await db.query.libraryItems.findFirst({
-//         where: and(
-//           eq(libraryItems.gameId, id),
-//           eq(libraryItems.userId, user.id)
-//         ),
-//       }))
-//         ? true
-//         : false;
-//     }
-//   }
-//   return NextResponse.json({ data, isOwned });
-// }
-
-
-export async function GET() {
   try {
-    console.log("Fetching games..."); // Debug log
+    const { data: game, error } = await supabase
+      .from('games')
+      .select('*, categories(*), platforms(*)')
+      .eq('id', params.id)
+      .single()
 
-    const data = await db.select().from(games);
-    console.log("Games found:", data); // Debug log
+    if (error) throw error
 
-    if (!data || data.length === 0) {
-      return NextResponse.json({ data: [] });
+    // Check if user owns the game
+    const { data: { user } } = await supabase.auth.getUser()
+    let isOwned = false
+
+    if (user) {
+      const { data: userGame } = await supabase
+        .from('user_games')
+        .select()
+        .eq('user_id', user.id)
+        .eq('game_id', params.id)
+        .single()
+
+      isOwned = !!userGame
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: game, isOwned })
   } catch (error) {
-    console.error("Error fetching games:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch games", details: error },
-      { status: 500 }
-    );
+    return NextResponse.json({ error }, { status: 500 })
   }
 }
-// export const revalidate = 1 // revalidate at most every hour
